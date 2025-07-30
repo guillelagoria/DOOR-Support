@@ -16,6 +16,7 @@ class SupportSite {
         this.renderNavigation();
         this.renderAdminData();
         this.initializeQuillEditor();
+        this.updateCategoryDescription(''); // Clear description on init
     }
 
     loadData() {
@@ -26,13 +27,13 @@ class SupportSite {
             // Sample data
             this.data = {
                 categories: [
-                    { id: '1', name: 'Primeros Pasos', parentId: null },
-                    { id: '2', name: 'Instalación', parentId: '1' },
-                    { id: '3', name: 'Configuración', parentId: '1' },
-                    { id: '4', name: 'Funcionalidades', parentId: null },
-                    { id: '5', name: 'Control de Acceso', parentId: '4' },
-                    { id: '6', name: 'Monitoreo', parentId: '4' },
-                    { id: '7', name: 'Soporte Técnico', parentId: null }
+                    { id: '1', name: 'Primeros Pasos', parentId: null, description: 'Todo lo que necesitas saber para comenzar con DOOR: instalación, configuración inicial y primeros pasos.' },
+                    { id: '2', name: 'Instalación', parentId: '1', description: 'Guías detalladas para instalar DOOR en diferentes entornos y configuraciones de sistema.' },
+                    { id: '3', name: 'Configuración', parentId: '1', description: 'Configuración inicial del sistema, usuarios, permisos y personalización de parámetros.' },
+                    { id: '4', name: 'Funcionalidades', parentId: null, description: 'Descubre todas las características y capacidades avanzadas que ofrece la plataforma DOOR.' },
+                    { id: '5', name: 'Control de Acceso', parentId: '4', description: 'Gestión completa de usuarios, tarjetas, códigos PIN y configuración de zonas de acceso.' },
+                    { id: '6', name: 'Monitoreo', parentId: '4', description: 'Herramientas de monitoreo en tiempo real, reportes y análisis de actividad del sistema.' },
+                    { id: '7', name: 'Soporte Técnico', parentId: null, description: 'Recursos de ayuda, solución de problemas comunes y contacto con nuestro equipo de soporte.' }
                 ],
                 articles: [
                     {
@@ -70,6 +71,20 @@ class SupportSite {
         // Preview modal
         document.getElementById('closePreviewModal').addEventListener('click', () => {
             document.getElementById('previewModal').classList.remove('active');
+        });
+
+        // Edit category modal
+        document.getElementById('closeEditCategoryModal').addEventListener('click', () => {
+            document.getElementById('editCategoryModal').classList.remove('active');
+        });
+
+        document.getElementById('cancelEditCategory').addEventListener('click', () => {
+            document.getElementById('editCategoryModal').classList.remove('active');
+        });
+
+        document.getElementById('editCategoryForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.saveEditedCategory();
         });
 
         // Admin tabs
@@ -115,6 +130,12 @@ class SupportSite {
         document.getElementById('previewModal').addEventListener('click', (e) => {
             if (e.target.id === 'previewModal') {
                 document.getElementById('previewModal').classList.remove('active');
+            }
+        });
+
+        document.getElementById('editCategoryModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editCategoryModal') {
+                document.getElementById('editCategoryModal').classList.remove('active');
             }
         });
     }
@@ -164,13 +185,16 @@ class SupportSite {
     createCategory() {
         const name = document.getElementById('categoryName').value.trim();
         const parentId = document.getElementById('parentCategory').value || null;
+        const descriptionElement = document.getElementById('categoryDescriptionInput');
+        const description = descriptionElement ? descriptionElement.value.trim() : '';
 
         if (!name) return;
 
         const newCategory = {
             id: Date.now().toString(),
             name,
-            parentId
+            parentId,
+            description: description || ''
         };
 
         this.data.categories.push(newCategory);
@@ -261,36 +285,78 @@ class SupportSite {
     }
 
     renderCategoryNav(category, container, level = 0) {
+        const subcategories = this.data.categories.filter(cat => cat.parentId === category.id);
+        const articles = this.data.articles.filter(article => article.categoryId === category.id);
+        const hasChildren = subcategories.length > 0 || articles.length > 0;
+
         const categoryElement = document.createElement('a');
         categoryElement.href = '#';
         categoryElement.className = `nav-item nav-category`;
         if (level > 0) categoryElement.classList.add(`nav-subcategory`);
+        if (hasChildren) categoryElement.classList.add('has-children');
+        
         categoryElement.textContent = category.name;
+        categoryElement.setAttribute('data-category-id', category.id);
+        
         categoryElement.addEventListener('click', (e) => {
             e.preventDefault();
+            
+            if (hasChildren) {
+                // Toggle expand/collapse
+                this.toggleCategoryExpansion(category.id, categoryElement);
+            }
+            
             this.updateBreadcrumb([category.name]);
+            this.updateCategoryDescription(category.description);
         });
+        
         container.appendChild(categoryElement);
 
-        // Add subcategories
-        const subcategories = this.data.categories.filter(cat => cat.parentId === category.id);
-        subcategories.forEach(subcategory => {
-            this.renderCategoryNav(subcategory, container, level + 1);
-        });
+        if (hasChildren) {
+            // Create children container
+            const childrenContainer = document.createElement('div');
+            childrenContainer.className = 'nav-children collapsed';
+            childrenContainer.setAttribute('data-parent-id', category.id);
 
-        // Add articles for this category
-        const articles = this.data.articles.filter(article => article.categoryId === category.id);
-        articles.forEach(article => {
-            const articleElement = document.createElement('a');
-            articleElement.href = '#';
-            articleElement.className = `nav-item nav-article`;
-            articleElement.textContent = article.title;
-            articleElement.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.showArticle(article);
+            // Add subcategories
+            subcategories.forEach(subcategory => {
+                this.renderCategoryNav(subcategory, childrenContainer, level + 1);
             });
-            container.appendChild(articleElement);
-        });
+
+            // Add articles for this category
+            articles.forEach(article => {
+                const articleElement = document.createElement('a');
+                articleElement.href = '#';
+                articleElement.className = `nav-item nav-article`;
+                articleElement.textContent = article.title;
+                articleElement.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.showArticle(article);
+                });
+                childrenContainer.appendChild(articleElement);
+            });
+
+            container.appendChild(childrenContainer);
+        }
+    }
+
+    toggleCategoryExpansion(categoryId, categoryElement) {
+        const childrenContainer = document.querySelector(`[data-parent-id="${categoryId}"]`);
+        if (!childrenContainer) return;
+
+        const isExpanded = categoryElement.classList.contains('expanded');
+        
+        if (isExpanded) {
+            // Collapse
+            categoryElement.classList.remove('expanded');
+            childrenContainer.classList.remove('expanded');
+            childrenContainer.classList.add('collapsed');
+        } else {
+            // Expand
+            categoryElement.classList.add('expanded');
+            childrenContainer.classList.remove('collapsed');
+            childrenContainer.classList.add('expanded');
+        }
     }
 
     showArticle(article) {
@@ -309,10 +375,11 @@ class SupportSite {
         // Generate table of contents
         this.generateTOC();
 
-        // Update breadcrumb
+        // Update breadcrumb and description
         const category = this.data.categories.find(cat => cat.id === article.categoryId);
         const breadcrumb = [category?.name || 'Sin categoría', article.title];
         this.updateBreadcrumb(breadcrumb);
+        this.updateCategoryDescription(category?.description || '');
     }
 
     generateTOC() {
@@ -359,6 +426,17 @@ class SupportSite {
         ).join('');
     }
 
+    updateCategoryDescription(description) {
+        const descriptionElement = document.getElementById('categoryDescription');
+        if (description && description.trim()) {
+            descriptionElement.textContent = description.trim();
+            descriptionElement.style.display = 'block';
+        } else {
+            descriptionElement.textContent = '';
+            descriptionElement.style.display = 'none';
+        }
+    }
+
     renderAdminData() {
         this.updateParentCategoryOptions();
         this.updateArticleCategoryOptions();
@@ -390,13 +468,20 @@ class SupportSite {
         const hasChildren = subcategories.length > 0;
         
         item.innerHTML = `
-            <div class="tree-node ${hasChildren ? 'has-children' : ''}" data-category-id="${category.id}">
+            <div class="tree-node ${hasChildren ? 'has-children' : ''} draggable" 
+                 data-category-id="${category.id}" 
+                 draggable="true">
                 <div class="tree-node-content">
                     <i class="tree-node-icon fas fa-folder"></i>
                     <span class="tree-node-name">${category.name}</span>
+                    <input type="text" class="tree-node-edit-input" value="${category.name}">
+                    <div class="tree-node-edit-actions">
+                        <button class="edit-action-btn save">✓</button>
+                        <button class="edit-action-btn cancel">✕</button>
+                    </div>
                 </div>
                 <div class="tree-node-actions">
-                    <button class="tree-action-btn edit" onclick="app.editCategory('${category.id}')">
+                    <button class="tree-action-btn edit" onclick="app.showEditCategoryModal('${category.id}')">
                         <i class="fas fa-edit"></i>
                     </button>
                     <button class="tree-action-btn delete" onclick="app.deleteCategory('${category.id}')">
@@ -405,6 +490,13 @@ class SupportSite {
                 </div>
             </div>
         `;
+
+        // Add drag and drop event listeners
+        const treeNode = item.querySelector('.tree-node');
+        this.addDragAndDropListeners(treeNode, category.id);
+
+        // Add edit functionality listeners
+        this.addEditListeners(treeNode, category.id);
 
         if (hasChildren) {
             const childrenContainer = document.createElement('div');
@@ -472,6 +564,7 @@ class SupportSite {
                 <div class="item-info">
                     <h4>${article.title}</h4>
                     <p>Categoría: ${category?.name || 'Sin categoría'}</p>
+                    ${category?.description ? `<p style="font-size: 11px; color: #9ca3af; margin-top: 4px;">${category.description}</p>` : ''}
                 </div>
                 <div class="item-actions">
                     <button class="btn-edit" onclick="app.editArticle('${article.id}')">
@@ -515,10 +608,320 @@ class SupportSite {
         if (category) {
             document.getElementById('categoryName').value = category.name;
             document.getElementById('parentCategory').value = category.parentId || '';
+            const descriptionElement = document.getElementById('categoryDescriptionInput');
+            if (descriptionElement) {
+                descriptionElement.value = category.description || '';
+            }
             
             // Switch to categories tab if not already there
             this.switchTab('categories');
         }
+    }
+
+    startEditCategory(id) {
+        // Find the tree node
+        const treeNode = document.querySelector(`[data-category-id="${id}"]`);
+        if (!treeNode) return;
+
+        // Cancel any other editing operations
+        this.cancelAllEditing();
+
+        // Enter edit mode
+        const nameSpan = treeNode.querySelector('.tree-node-name');
+        const editInput = treeNode.querySelector('.tree-node-edit-input');
+        const editActions = treeNode.querySelector('.tree-node-edit-actions');
+        const actions = treeNode.querySelector('.tree-node-actions');
+
+        nameSpan.classList.add('editing');
+        editInput.classList.add('active');
+        editActions.classList.add('active');
+        actions.style.display = 'none';
+
+        editInput.focus();
+        editInput.select();
+
+        // Store original value for cancel
+        editInput.setAttribute('data-original-value', nameSpan.textContent);
+    }
+
+    addEditListeners(treeNode, categoryId) {
+        const editInput = treeNode.querySelector('.tree-node-edit-input');
+        const saveBtn = treeNode.querySelector('.edit-action-btn.save');
+        const cancelBtn = treeNode.querySelector('.edit-action-btn.cancel');
+
+        // Save on Enter key
+        editInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                this.saveEditCategory(categoryId);
+            } else if (e.key === 'Escape') {
+                this.cancelEditCategory(categoryId);
+            }
+        });
+
+        // Save button
+        saveBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.saveEditCategory(categoryId);
+        });
+
+        // Cancel button
+        cancelBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.cancelEditCategory(categoryId);
+        });
+
+        // Cancel on blur (clicking outside)
+        editInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (!treeNode.contains(document.activeElement)) {
+                    this.cancelEditCategory(categoryId);
+                }
+            }, 100);
+        });
+    }
+
+    saveEditCategory(categoryId) {
+        const treeNode = document.querySelector(`[data-category-id="${categoryId}"]`);
+        if (!treeNode) return;
+
+        const editInput = treeNode.querySelector('.tree-node-edit-input');
+        const newName = editInput.value.trim();
+
+        if (!newName) {
+            alert('El nombre de la categoría no puede estar vacío.');
+            editInput.focus();
+            return;
+        }
+
+        // Update the category in data
+        const category = this.data.categories.find(cat => cat.id === categoryId);
+        if (category) {
+            category.name = newName;
+            this.saveData();
+            this.renderNavigation();
+            this.renderAdminData();
+        }
+    }
+
+    cancelEditCategory(categoryId) {
+        const treeNode = document.querySelector(`[data-category-id="${categoryId}"]`);
+        if (!treeNode) return;
+
+        const nameSpan = treeNode.querySelector('.tree-node-name');
+        const editInput = treeNode.querySelector('.tree-node-edit-input');
+        const editActions = treeNode.querySelector('.tree-node-edit-actions');
+        const actions = treeNode.querySelector('.tree-node-actions');
+
+        // Restore original value
+        const originalValue = editInput.getAttribute('data-original-value');
+        editInput.value = originalValue;
+
+        // Exit edit mode
+        nameSpan.classList.remove('editing');
+        editInput.classList.remove('active');
+        editActions.classList.remove('active');
+        actions.style.display = 'flex';
+    }
+
+    cancelAllEditing() {
+        const editingNodes = document.querySelectorAll('.tree-node-edit-input.active');
+        editingNodes.forEach(input => {
+            const treeNode = input.closest('.tree-node');
+            const categoryId = treeNode.getAttribute('data-category-id');
+            this.cancelEditCategory(categoryId);
+        });
+    }
+
+    addDragAndDropListeners(treeNode, categoryId) {
+        // Drag start
+        treeNode.addEventListener('dragstart', (e) => {
+            treeNode.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', categoryId);
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        // Drag end
+        treeNode.addEventListener('dragend', (e) => {
+            treeNode.classList.remove('dragging');
+            // Clean up all drag-over classes
+            document.querySelectorAll('.tree-node').forEach(node => {
+                node.classList.remove('drag-over', 'drop-target-above', 'drop-target-below');
+            });
+        });
+
+        // Drag over
+        treeNode.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const draggingId = e.dataTransfer.getData('text/plain');
+            if (draggingId === categoryId) return; // Can't drop on itself
+
+            // Clean up previous drag-over states
+            document.querySelectorAll('.tree-node').forEach(node => {
+                node.classList.remove('drag-over', 'drop-target-above', 'drop-target-below');
+            });
+
+            // Determine drop position
+            const rect = treeNode.getBoundingClientRect();
+            const y = e.clientY;
+            const top = rect.top;
+            const bottom = rect.bottom;
+            const height = bottom - top;
+            
+            if (y < top + height * 0.25) {
+                treeNode.classList.add('drop-target-above');
+            } else if (y > bottom - height * 0.25) {
+                treeNode.classList.add('drop-target-below');
+            } else {
+                treeNode.classList.add('drag-over');
+            }
+        });
+
+        // Drag leave
+        treeNode.addEventListener('dragleave', (e) => {
+            // Only remove classes if we're actually leaving the node
+            if (!treeNode.contains(e.relatedTarget)) {
+                treeNode.classList.remove('drag-over', 'drop-target-above', 'drop-target-below');
+            }
+        });
+
+        // Drop
+        treeNode.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const draggingId = e.dataTransfer.getData('text/plain');
+            
+            if (draggingId === categoryId) return; // Can't drop on itself
+
+            // Determine drop type
+            let dropType = 'child';
+            if (treeNode.classList.contains('drop-target-above')) {
+                dropType = 'before';
+            } else if (treeNode.classList.contains('drop-target-below')) {
+                dropType = 'after';
+            }
+
+            this.handleCategoryDrop(draggingId, categoryId, dropType);
+
+            // Clean up
+            document.querySelectorAll('.tree-node').forEach(node => {
+                node.classList.remove('drag-over', 'drop-target-above', 'drop-target-below');
+            });
+        });
+    }
+
+    handleCategoryDrop(draggedId, targetId, dropType) {
+        const draggedCategory = this.data.categories.find(cat => cat.id === draggedId);
+        const targetCategory = this.data.categories.find(cat => cat.id === targetId);
+        
+        if (!draggedCategory || !targetCategory) return;
+
+        // Prevent dropping a parent into its own child
+        if (this.isDescendant(targetId, draggedId)) {
+            alert('No se puede mover una categoría dentro de una de sus subcategorías.');
+            return;
+        }
+
+        switch (dropType) {
+            case 'child':
+                // Make dragged category a child of target
+                draggedCategory.parentId = targetId;
+                break;
+            case 'before':
+            case 'after':
+                // Make dragged category a sibling of target
+                draggedCategory.parentId = targetCategory.parentId;
+                
+                // TODO: Implement ordering within siblings if needed
+                break;
+        }
+
+        this.saveData();
+        this.renderNavigation();
+        this.renderAdminData();
+    }
+
+    isDescendant(ancestorId, descendantId) {
+        const category = this.data.categories.find(cat => cat.id === descendantId);
+        if (!category || !category.parentId) return false;
+        if (category.parentId === ancestorId) return true;
+        return this.isDescendant(ancestorId, category.parentId);
+    }
+
+    showEditCategoryModal(categoryId) {
+        const category = this.data.categories.find(cat => cat.id === categoryId);
+        if (!category) return;
+
+        // Store the current editing category ID
+        this.currentEditingCategoryId = categoryId;
+
+        // Populate the form
+        document.getElementById('editCategoryName').value = category.name;
+        document.getElementById('editCategoryDescriptionText').value = category.description || '';
+
+        // Populate parent category options (excluding current category and its descendants)
+        this.populateEditParentOptions(categoryId);
+        document.getElementById('editCategoryParent').value = category.parentId || '';
+
+        // Show the modal
+        document.getElementById('editCategoryModal').classList.add('active');
+    }
+
+    populateEditParentOptions(excludeCategoryId) {
+        const select = document.getElementById('editCategoryParent');
+        select.innerHTML = '<option value="">Categoría principal</option>';
+
+        // Get all categories except the one being edited and its descendants
+        const availableCategories = this.data.categories.filter(cat => {
+            if (cat.id === excludeCategoryId) return false;
+            if (this.isDescendant(excludeCategoryId, cat.id)) return false;
+            return true;
+        });
+
+        availableCategories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            select.appendChild(option);
+        });
+    }
+
+    saveEditedCategory() {
+        const categoryId = this.currentEditingCategoryId;
+        const category = this.data.categories.find(cat => cat.id === categoryId);
+        if (!category) return;
+
+        const newName = document.getElementById('editCategoryName').value.trim();
+        const newParentId = document.getElementById('editCategoryParent').value || null;
+        const newDescription = document.getElementById('editCategoryDescriptionText').value.trim();
+
+        if (!newName) {
+            alert('El nombre de la categoría no puede estar vacío.');
+            return;
+        }
+
+        // Check if the new parent would create a circular reference
+        if (newParentId && this.isDescendant(categoryId, newParentId)) {
+            alert('No se puede mover una categoría dentro de una de sus subcategorías.');
+            return;
+        }
+
+        // Update the category
+        category.name = newName;
+        category.parentId = newParentId;
+        category.description = newDescription;
+
+        // Save and refresh
+        this.saveData();
+        this.renderNavigation();
+        this.renderAdminData();
+
+        // Close modal
+        document.getElementById('editCategoryModal').classList.remove('active');
+        this.currentEditingCategoryId = null;
+
+        // Show success message
+        // You could add a toast notification here if desired
     }
 
     editArticle(id) {

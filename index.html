@@ -20,9 +20,14 @@
                 <button class="admin-btn" id="adminBtn">Admin</button>
             </div>
             <div class="header-center">
-                <nav class="breadcrumb" id="breadcrumb">
-                    <span class="breadcrumb-item">Inicio</span>
-                </nav>
+                <div class="breadcrumb-container">
+                    <nav class="breadcrumb" id="breadcrumb">
+                        <span class="breadcrumb-item">Inicio</span>
+                    </nav>
+                    <div class="category-description" id="categoryDescription">
+                        <!-- Category description will appear here -->
+                    </div>
+                </div>
             </div>
             <div class="header-right">
                 <input type="search" placeholder="Buscar..." class="search-input">
@@ -86,7 +91,10 @@
                                     <select id="parentCategory">
                                         <option value="">Categoría principal</option>
                                     </select>
-                                    <button type="submit"><i class="fas fa-plus"></i> Agregar</button>
+                                </div>
+                                <div class="form-row description-row">
+                                    <textarea placeholder="Descripción de la categoría (opcional)" id="categoryDescriptionInput" rows="2"></textarea>
+                                    <button type="submit"><i class="fas fa-plus"></i> Agregar Categoría</button>
                                 </div>
                             </form>
                         </div>
@@ -164,6 +172,45 @@
                 <div id="previewContent" class="preview-content">
                     <!-- Article preview will be rendered here -->
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Category Modal -->
+    <div class="modal-overlay" id="editCategoryModal">
+        <div class="modal-content edit-category-modal">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Editar Categoría</h2>
+                <button class="close-btn" id="closeEditCategoryModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editCategoryForm" class="edit-category-form">
+                    <div class="form-group">
+                        <label for="editCategoryName">Nombre de la categoría</label>
+                        <input type="text" id="editCategoryName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editCategoryParent">Categoría padre</label>
+                        <select id="editCategoryParent">
+                            <option value="">Categoría principal</option>
+                        </select>
+                        <small class="help-text">Selecciona la categoría padre para cambiar la jerarquía</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editCategoryDescriptionText">Descripción</label>
+                        <textarea id="editCategoryDescriptionText" rows="3" placeholder="Descripción opcional de la categoría"></textarea>
+                        <small class="help-text">Esta descripción aparecerá en la barra superior cuando se seleccione la categoría</small>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel" id="cancelEditCategory">Cancelar</button>
+                        <button type="submit" class="btn-save-edit">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
