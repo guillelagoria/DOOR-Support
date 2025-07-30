@@ -7,6 +7,10 @@ class SupportSite {
         this.currentArticle = null;
         this.currentEditingArticle = null;
         this.quillEditor = null;
+        this.carouselInterval = null;
+        this.currentCarouselSlide = 0;
+        this.searchResults = [];
+        this.selectedSearchIndex = -1;
         this.init();
     }
 
@@ -16,7 +20,7 @@ class SupportSite {
         this.renderNavigation();
         this.renderAdminData();
         this.initializeQuillEditor();
-        this.updateCategoryDescription(''); // Clear description on init
+        this.showHomePage(); // Show homepage on init
     }
 
     loadData() {
@@ -150,6 +154,11 @@ class SupportSite {
     }
 
     setupEventListeners() {
+        // Logo click to go home
+        document.getElementById('logoBtn').addEventListener('click', () => {
+            this.showHomePage();
+        });
+
         // Admin modal
         document.getElementById('adminBtn').addEventListener('click', () => {
             document.getElementById('adminModal').classList.add('active');
@@ -211,6 +220,38 @@ class SupportSite {
             this.showPreview();
         });
 
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('click', () => {
+            this.showSearchOverlay();
+        });
+
+        document.getElementById('searchOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'searchOverlay') {
+                this.hideSearchOverlay();
+            }
+        });
+
+        document.getElementById('searchInputLarge').addEventListener('input', (e) => {
+            this.performSearch(e.target.value);
+        });
+
+        document.getElementById('searchInputLarge').addEventListener('keydown', (e) => {
+            this.handleSearchKeydown(e);
+        });
+
+        // Global keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Cmd/Ctrl + K to open search
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                this.showSearchOverlay();
+            }
+            // Escape to close search
+            if (e.key === 'Escape' && document.getElementById('searchOverlay').classList.contains('active')) {
+                this.hideSearchOverlay();
+            }
+        });
+
         // Close modals on overlay click
         document.getElementById('adminModal').addEventListener('click', (e) => {
             if (e.target.id === 'adminModal') {
@@ -246,7 +287,7 @@ class SupportSite {
 
         this.quillEditor = new Quill('#articleEditor', {
             theme: 'snow',
-            placeholder: 'Escriba el contenido del artículo aquí...',
+            placeholder: 'Write the article content here...',
             modules: {
                 toolbar: toolbarOptions
             }
@@ -354,7 +395,7 @@ class SupportSite {
         const content = this.quillEditor.root.innerHTML;
 
         if (!title || !content || content === '<p><br></p>') {
-            alert('Por favor, complete el título y contenido del artículo antes de previsualizar.');
+            alert('Please complete the article title and content before previewing.');
             return;
         }
 
@@ -368,7 +409,7 @@ class SupportSite {
         const navigation = document.getElementById('navigation');
         const rootCategories = this.data.categories.filter(cat => !cat.parentId);
 
-        navigation.innerHTML = '<div class="nav-section"><h3>Documentación</h3></div>';
+        navigation.innerHTML = '<div class="nav-section"><h3>Documentation</h3></div>';
 
         rootCategories.forEach(category => {
             this.renderCategoryNav(category, navigation);
@@ -393,12 +434,9 @@ class SupportSite {
             e.preventDefault();
             
             if (hasChildren) {
-                // Toggle expand/collapse
+                // Only toggle expand/collapse, don't change content
                 this.toggleCategoryExpansion(category.id, categoryElement);
             }
-            
-            this.updateBreadcrumb([category.name]);
-            this.updateCategoryDescription(category.description);
         });
         
         container.appendChild(categoryElement);
@@ -422,7 +460,7 @@ class SupportSite {
                 articleElement.textContent = article.title;
                 articleElement.addEventListener('click', (e) => {
                     e.preventDefault();
-                    this.showArticle(article);
+                    this.showArticle(article, category);
                 });
                 childrenContainer.appendChild(articleElement);
             });
@@ -450,7 +488,7 @@ class SupportSite {
         }
     }
 
-    showArticle(article) {
+    showArticle(article, parentCategory = null) {
         this.currentArticle = article;
         const contentArea = document.getElementById('articleContent');
         
@@ -466,11 +504,11 @@ class SupportSite {
         // Generate table of contents
         this.generateTOC();
 
-        // Update breadcrumb and description
+        // Build breadcrumb path with hierarchy
         const category = this.data.categories.find(cat => cat.id === article.categoryId);
-        const breadcrumb = [category?.name || 'Sin categoría', article.title];
-        this.updateBreadcrumb(breadcrumb);
-        this.updateCategoryDescription(category?.description || '');
+        const breadcrumbPath = this.buildBreadcrumbPath(category);
+        breadcrumbPath.push(article.title);
+        this.updateBreadcrumb(breadcrumbPath);
     }
 
     generateTOC() {
@@ -512,19 +550,291 @@ class SupportSite {
 
     updateBreadcrumb(items) {
         const breadcrumb = document.getElementById('breadcrumb');
-        breadcrumb.innerHTML = items.map(item => 
-            `<span class="breadcrumb-item">${item}</span>`
-        ).join('');
+        breadcrumb.innerHTML = items.map((item, index) => {
+            const isLast = index === items.length - 1;
+            if (isLast || item === 'Home') {
+                return `<span class="breadcrumb-item">${item}</span>`;
+            } else {
+                return `<span class="breadcrumb-item" data-navigate="${item}">${item}</span>`;
+            }
+        }).join('');
+        
+        // Add click handlers for navigation
+        document.querySelectorAll('.breadcrumb-item[data-navigate]').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const categoryName = e.target.getAttribute('data-navigate');
+                this.navigateToCategory(categoryName);
+            });
+        });
     }
 
-    updateCategoryDescription(description) {
-        const descriptionElement = document.getElementById('categoryDescription');
-        if (description && description.trim()) {
-            descriptionElement.textContent = description.trim();
-            descriptionElement.style.display = 'block';
-        } else {
-            descriptionElement.textContent = '';
-            descriptionElement.style.display = 'none';
+    buildBreadcrumbPath(category) {
+        if (!category) return ['Home'];
+        
+        const path = ['Home'];
+        const categoryPath = [];
+        
+        let current = category;
+        while (current) {
+            categoryPath.unshift(current.name);
+            current = this.data.categories.find(cat => cat.id === current.parentId);
+        }
+        
+        return path.concat(categoryPath);
+    }
+    
+    navigateToCategory(categoryName) {
+        const category = this.data.categories.find(cat => cat.name === categoryName);
+        if (category) {
+            // Find and expand the category in navigation
+            const categoryElement = document.querySelector(`[data-category-id="${category.id}"]`);
+            if (categoryElement) {
+                this.expandCategoryPath(category.id);
+            }
+        }
+        // Just update breadcrumb to show category path
+        const breadcrumbPath = this.buildBreadcrumbPath(category);
+        this.updateBreadcrumb(breadcrumbPath);
+    }
+    
+    expandCategoryPath(categoryId) {
+        const category = this.data.categories.find(cat => cat.id === categoryId);
+        if (!category) return;
+        
+        // Expand parent categories first
+        if (category.parentId) {
+            this.expandCategoryPath(category.parentId);
+        }
+        
+        // Expand this category
+        const categoryElement = document.querySelector(`[data-category-id="${categoryId}"]`);
+        const childrenContainer = document.querySelector(`[data-parent-id="${categoryId}"]`);
+        
+        if (categoryElement && childrenContainer) {
+            categoryElement.classList.add('expanded');
+            childrenContainer.classList.remove('collapsed');
+            childrenContainer.classList.add('expanded');
+        }
+    }
+    
+    showHomePage() {
+        this.currentArticle = null;
+        const contentArea = document.getElementById('articleContent');
+        
+        // Clear any existing carousel interval
+        if (this.carouselInterval) {
+            clearInterval(this.carouselInterval);
+        }
+        
+        // Show homepage with carousel
+        contentArea.innerHTML = this.generateHomepageHTML();
+        
+        // Initialize carousel
+        this.initializeCarousel();
+        
+        // Hide table of contents
+        document.getElementById('tocContainer').style.display = 'none';
+        
+        // Reset breadcrumb
+        this.updateBreadcrumb(['Home']);
+        
+        // Clear navigation active states
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+    }
+    
+    generateHomepageHTML() {
+        // Get main categories (no parent)
+        const mainCategories = this.data.categories.filter(cat => !cat.parentId);
+        
+        // Generate carousel slides
+        const carouselSlides = mainCategories.map((category, index) => {
+            const categoryArticles = this.getTopArticlesForCategory(category.id, 4);
+            
+            return `
+                <div class="carousel-slide ${index === 0 ? 'active' : ''}" data-category-id="${category.id}">
+                    <div class="articles-grid">
+                        ${categoryArticles.map(article => `
+                            <div class="article-card" onclick="app.showArticleFromCard('${article.id}')">
+                                <div class="article-card-category">${category.name}</div>
+                                <h3 class="article-card-title">${article.title}</h3>
+                                <p class="article-card-excerpt">${this.extractTextFromHTML(article.content)}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        // Generate indicators
+        const indicators = mainCategories.map((_, index) => `
+            <div class="carousel-indicator ${index === 0 ? 'active' : ''}" data-slide="${index}"></div>
+        `).join('');
+        
+        // Generate category overview cards
+        const categoryCards = mainCategories.map(category => {
+            const icons = ['🏠', '👥', '🏢', '🔧']; // Add more icons as needed
+            const icon = icons[mainCategories.indexOf(category)] || '📁';
+            
+            return `
+                <div class="category-overview-card" onclick="app.navigateToCategoryFromCard('${category.id}')">
+                    <span class="category-overview-icon">${icon}</span>
+                    <h3 class="category-overview-card-title">${category.name}</h3>
+                    <p class="category-overview-card-description">${category.description || 'Explore this category to find relevant articles and guides.'}</p>
+                </div>
+            `;
+        }).join('');
+        
+        return `
+            <div class="homepage-container">
+                <div class="carousel-container">
+                    <div class="carousel-header">
+                        <h1 class="carousel-title" id="carouselTitle">${mainCategories[0]?.name || 'Featured Articles'}</h1>
+                        <p class="carousel-subtitle" id="carouselSubtitle">Popular articles in this category</p>
+                    </div>
+                    <div class="carousel-content">
+                        ${carouselSlides}
+                    </div>
+                    <div class="carousel-indicators">
+                        ${indicators}
+                    </div>
+                    <div class="carousel-controls">
+                        <button class="carousel-control" id="carouselPrev">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </button>
+                        <button class="carousel-control" id="carouselNext">
+                            <i class="fas fa-chevron-right"></i> Next
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="category-overview">
+                    <h2 class="category-overview-title">Browse Categories</h2>
+                    <div class="category-cards-grid">
+                        ${categoryCards}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    getTopArticlesForCategory(categoryId, limit = 4) {
+        // Get all articles for this category and its subcategories
+        const categoryIds = [categoryId];
+        const subcategories = this.data.categories.filter(cat => cat.parentId === categoryId);
+        subcategories.forEach(sub => {
+            categoryIds.push(sub.id);
+            // Add sub-subcategories too
+            const subSubcategories = this.data.categories.filter(cat => cat.parentId === sub.id);
+            subSubcategories.forEach(subsub => categoryIds.push(subsub.id));
+        });
+        
+        const articles = this.data.articles.filter(article => 
+            categoryIds.includes(article.categoryId)
+        );
+        
+        // For now, just return the first `limit` articles
+        // In a real app, you'd sort by popularity/views
+        return articles.slice(0, limit);
+    }
+    
+    extractTextFromHTML(html) {
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        const text = div.textContent || div.innerText || '';
+        return text.length > 150 ? text.substring(0, 150) + '...' : text;
+    }
+    
+    initializeCarousel() {
+        const mainCategories = this.data.categories.filter(cat => !cat.parentId);
+        this.currentCarouselSlide = 0;
+        
+        // Set up indicator click handlers
+        document.querySelectorAll('.carousel-indicator').forEach((indicator, index) => {
+            indicator.addEventListener('click', () => {
+                this.goToCarouselSlide(index);
+            });
+        });
+        
+        // Set up control button handlers
+        const prevBtn = document.getElementById('carouselPrev');
+        const nextBtn = document.getElementById('carouselNext');
+        
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                this.goToCarouselSlide(this.currentCarouselSlide - 1);
+            });
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                this.goToCarouselSlide(this.currentCarouselSlide + 1);
+            });
+        }
+        
+        // Start auto-rotation
+        this.startCarouselAutoRotation();
+    }
+    
+    startCarouselAutoRotation() {
+        const mainCategories = this.data.categories.filter(cat => !cat.parentId);
+        if (mainCategories.length <= 1) return;
+        
+        this.carouselInterval = setInterval(() => {
+            const nextSlide = (this.currentCarouselSlide + 1) % mainCategories.length;
+            this.goToCarouselSlide(nextSlide);
+        }, 10000); // 10 seconds
+    }
+    
+    goToCarouselSlide(slideIndex) {
+        const mainCategories = this.data.categories.filter(cat => !cat.parentId);
+        const maxIndex = mainCategories.length - 1;
+        
+        // Handle wrapping
+        if (slideIndex < 0) slideIndex = maxIndex;
+        if (slideIndex > maxIndex) slideIndex = 0;
+        
+        this.currentCarouselSlide = slideIndex;
+        
+        // Update slides
+        document.querySelectorAll('.carousel-slide').forEach((slide, index) => {
+            slide.classList.toggle('active', index === slideIndex);
+        });
+        
+        // Update indicators
+        document.querySelectorAll('.carousel-indicator').forEach((indicator, index) => {
+            indicator.classList.toggle('active', index === slideIndex);
+        });
+        
+        // Update title and subtitle
+        const currentCategory = mainCategories[slideIndex];
+        const titleElement = document.getElementById('carouselTitle');
+        const subtitleElement = document.getElementById('carouselSubtitle');
+        
+        if (titleElement && currentCategory) {
+            titleElement.textContent = currentCategory.name;
+        }
+        if (subtitleElement) {
+            subtitleElement.textContent = 'Popular articles in this category';
+        }
+    }
+    
+    showArticleFromCard(articleId) {
+        const article = this.data.articles.find(art => art.id === articleId);
+        if (article) {
+            const category = this.data.categories.find(cat => cat.id === article.categoryId);
+            this.showArticle(article, category);
+        }
+    }
+    
+    navigateToCategoryFromCard(categoryId) {
+        const category = this.data.categories.find(cat => cat.id === categoryId);
+        if (category) {
+            // Expand the category in navigation
+            this.expandCategoryPath(categoryId);
+            // Navigate to show category content
+            this.navigateToCategory(category.name);
         }
     }
 
@@ -542,7 +852,7 @@ class SupportSite {
         container.innerHTML = '';
         
         if (rootCategories.length === 0) {
-            container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">No hay categorías creadas</p>';
+            container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">No categories created</p>';
             return;
         }
 
@@ -561,7 +871,7 @@ class SupportSite {
         // Determine category level and icon
         const categoryLevel = this.getCategoryLevel(category.id);
         const levelIcon = categoryLevel === 0 ? 'fas fa-folder' : categoryLevel === 1 ? 'fas fa-folder-open' : 'fas fa-file-alt';
-        const levelLabel = categoryLevel === 0 ? 'Categoría Principal' : categoryLevel === 1 ? 'Subcategoría' : 'Subcategoría de Nivel 2';
+        const levelLabel = categoryLevel === 0 ? 'Main Category' : categoryLevel === 1 ? 'Subcategory' : 'Level 2 Subcategory';
 
         item.innerHTML = `
             <div class="tree-node ${hasChildren ? 'has-children' : ''} draggable" 
@@ -621,7 +931,7 @@ class SupportSite {
 
     updateParentCategoryOptions() {
         const select = document.getElementById('parentCategory');
-        select.innerHTML = '<option value="">📁 Categoría principal</option>';
+        select.innerHTML = '<option value="">📁 Main category</option>';
         
         // Create hierarchical category options
         const rootCategories = this.data.categories.filter(cat => !cat.parentId);
@@ -666,7 +976,7 @@ class SupportSite {
 
     updateArticleCategoryOptions() {
         const select = document.getElementById('articleCategory');
-        select.innerHTML = '<option value="">📋 Seleccionar categoría</option>';
+        select.innerHTML = '<option value="">📋 Select category</option>';
         
         // Create hierarchical category options for articles
         const rootCategories = this.data.categories.filter(cat => !cat.parentId);
@@ -714,7 +1024,7 @@ class SupportSite {
         container.innerHTML = '';
 
         if (this.data.articles.length === 0) {
-            container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">No hay artículos creados</p>';
+            container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">No articles created</p>';
             return;
         }
 
@@ -727,15 +1037,15 @@ class SupportSite {
             item.innerHTML = `
                 <div class="item-info">
                     <h4>${article.title}</h4>
-                    <p>Categoría: ${category?.name || 'Sin categoría'}</p>
+                    <p>Category: ${category?.name || 'No category'}</p>
                     ${category?.description ? `<p style="font-size: 11px; color: #9ca3af; margin-top: 4px;">${category.description}</p>` : ''}
                 </div>
                 <div class="item-actions">
                     <button class="btn-edit" onclick="app.editArticle('${article.id}')">
-                        <i class="fas fa-edit"></i> Editar
+                        <i class="fas fa-edit"></i> Edit
                     </button>
                     <button class="btn-delete" onclick="app.deleteArticle('${article.id}')">
-                        <i class="fas fa-trash"></i> Eliminar
+                        <i class="fas fa-trash"></i> Delete
                     </button>
                 </div>
             `;
@@ -745,7 +1055,7 @@ class SupportSite {
     }
 
     deleteCategory(id) {
-        if (confirm('¿Está seguro de que desea eliminar esta categoría? También se eliminarán todos los artículos de esta categoría.')) {
+        if (confirm('Are you sure you want to delete this category? All articles in this category will also be deleted.')) {
             // Remove category and its children
             this.data.categories = this.data.categories.filter(cat => cat.id !== id && cat.parentId !== id);
             
@@ -759,7 +1069,7 @@ class SupportSite {
     }
 
     deleteArticle(id) {
-        if (confirm('¿Está seguro de que desea eliminar este artículo?')) {
+        if (confirm('Are you sure you want to delete this article?')) {
             this.data.articles = this.data.articles.filter(art => art.id !== id);
             this.saveData();
             this.renderNavigation();
@@ -852,7 +1162,7 @@ class SupportSite {
         const newName = editInput.value.trim();
 
         if (!newName) {
-            alert('El nombre de la categoría no puede estar vacío.');
+            alert('Category name cannot be empty.');
             editInput.focus();
             return;
         }
@@ -982,7 +1292,7 @@ class SupportSite {
 
         // Prevent dropping a parent into its own child
         if (this.isDescendant(targetId, draggedId)) {
-            alert('No se puede mover una categoría dentro de una de sus subcategorías.');
+            alert('Cannot move a category into one of its subcategories.');
             return;
         }
 
@@ -1039,7 +1349,7 @@ class SupportSite {
 
     populateEditParentOptions(excludeCategoryId) {
         const select = document.getElementById('editCategoryParent');
-        select.innerHTML = '<option value="">📁 Categoría principal</option>';
+        select.innerHTML = '<option value="">📁 Main category</option>';
 
         // Get root categories that are available (excluding the one being edited and its descendants)
         const rootCategories = this.data.categories.filter(cat => {
@@ -1102,13 +1412,13 @@ class SupportSite {
         const newDescription = document.getElementById('editCategoryDescriptionText').value.trim();
 
         if (!newName) {
-            alert('El nombre de la categoría no puede estar vacío.');
+            alert('Category name cannot be empty.');
             return;
         }
 
         // Check if the new parent would create a circular reference
         if (newParentId && this.isDescendant(categoryId, newParentId)) {
-            alert('No se puede mover una categoría dentro de una de sus subcategorías.');
+            alert('Cannot move a category into one of its subcategories.');
             return;
         }
 
@@ -1141,6 +1451,259 @@ class SupportSite {
             
             // Set Quill editor content
             this.quillEditor.root.innerHTML = article.content;
+        }
+    }
+    
+    // Search functionality
+    showSearchOverlay() {
+        const overlay = document.getElementById('searchOverlay');
+        const searchInput = document.getElementById('searchInputLarge');
+        
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Focus the input after animation
+        setTimeout(() => {
+            searchInput.focus();
+        }, 100);
+        
+        this.selectedSearchIndex = -1;
+        this.searchResults = [];
+    }
+    
+    hideSearchOverlay() {
+        const overlay = document.getElementById('searchOverlay');
+        const searchInput = document.getElementById('searchInputLarge');
+        
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        
+        // Clear search
+        searchInput.value = '';
+        this.displaySearchResults([]);
+        this.selectedSearchIndex = -1;
+        this.searchResults = [];
+    }
+    
+    performSearch(query) {
+        if (!query || query.trim().length < 2) {
+            this.displaySearchResults([]);
+            return;
+        }
+        
+        const searchTerm = query.toLowerCase().trim();
+        const results = [];
+        
+        // Search articles
+        this.data.articles.forEach(article => {
+            const title = article.title.toLowerCase();
+            const content = this.extractTextFromHTML(article.content).toLowerCase();
+            const category = this.data.categories.find(cat => cat.id === article.categoryId);
+            const categoryName = category ? category.name.toLowerCase() : '';
+            
+            let relevanceScore = 0;
+            let matchType = '';
+            
+            // Title matches get highest score
+            if (title.includes(searchTerm)) {
+                relevanceScore += 10;
+                matchType = 'title';
+            }
+            
+            // Category matches get medium score
+            if (categoryName.includes(searchTerm)) {
+                relevanceScore += 5;
+                matchType = matchType || 'category';
+            }
+            
+            // Content matches get lower score
+            if (content.includes(searchTerm)) {
+                relevanceScore += 1;
+                matchType = matchType || 'content';
+            }
+            
+            if (relevanceScore > 0) {
+                results.push({
+                    type: 'article',
+                    id: article.id,
+                    title: article.title,
+                    content: article.content,
+                    category: category,
+                    relevanceScore,
+                    matchType
+                });
+            }
+        });
+        
+        // Search categories
+        this.data.categories.forEach(category => {
+            const name = category.name.toLowerCase();
+            const description = (category.description || '').toLowerCase();
+            
+            let relevanceScore = 0;
+            let matchType = '';
+            
+            if (name.includes(searchTerm)) {
+                relevanceScore += 8;
+                matchType = 'name';
+            }
+            
+            if (description.includes(searchTerm)) {
+                relevanceScore += 3;
+                matchType = matchType || 'description';
+            }
+            
+            if (relevanceScore > 0) {
+                results.push({
+                    type: 'category',
+                    id: category.id,
+                    title: category.name,
+                    description: category.description || '',
+                    category: category,
+                    relevanceScore,
+                    matchType
+                });
+            }
+        });
+        
+        // Sort by relevance
+        results.sort((a, b) => b.relevanceScore - a.relevanceScore);
+        
+        // Limit results
+        this.searchResults = results.slice(0, 10);
+        this.selectedSearchIndex = -1;
+        this.displaySearchResults(this.searchResults, searchTerm);
+    }
+    
+    displaySearchResults(results, searchTerm = '') {
+        const container = document.getElementById('searchResults');
+        
+        if (results.length === 0) {
+            if (searchTerm) {
+                container.innerHTML = `
+                    <div class="search-empty">
+                        <div class="search-empty-icon">🔍</div>
+                        <div class="search-empty-title">No results found</div>
+                        <div class="search-empty-text">Try different keywords or browse categories</div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="search-empty">
+                        <div class="search-empty-icon">🔍</div>
+                        <div class="search-empty-title">Start typing to search</div>
+                        <div class="search-empty-text">Find articles, categories, and guides across all sections</div>
+                    </div>
+                `;
+            }
+            return;
+        }
+        
+        const resultsHTML = results.map((result, index) => {
+            const isSelected = index === this.selectedSearchIndex;
+            
+            if (result.type === 'article') {
+                const excerpt = this.highlightSearchTerm(
+                    this.extractTextFromHTML(result.content), 
+                    searchTerm
+                );
+                const categoryPath = this.buildBreadcrumbPath(result.category).join(' › ');
+                
+                return `
+                    <div class="search-result-item ${isSelected ? 'selected' : ''}" data-index="${index}">
+                        <div class="search-result-title">${this.highlightSearchTerm(result.title, searchTerm)}</div>
+                        <div class="search-result-category">${categoryPath}</div>
+                        <div class="search-result-excerpt">${excerpt}</div>
+                    </div>
+                `;
+            } else {
+                const parentPath = result.category.parentId ? 
+                    this.buildBreadcrumbPath(this.data.categories.find(c => c.id === result.category.parentId)).join(' › ') + ' › ' : 
+                    '';
+                
+                return `
+                    <div class="search-result-item ${isSelected ? 'selected' : ''}" data-index="${index}">
+                        <div class="search-result-title">${this.highlightSearchTerm(result.title, searchTerm)}</div>
+                        <div class="search-result-category">${parentPath}Category</div>
+                        <div class="search-result-excerpt">${this.highlightSearchTerm(result.description, searchTerm)}</div>
+                    </div>
+                `;
+            }
+        }).join('');
+        
+        container.innerHTML = resultsHTML;
+        
+        // Add click handlers
+        container.querySelectorAll('.search-result-item').forEach((item, index) => {
+            item.addEventListener('click', () => {
+                this.selectSearchResult(index);
+            });
+        });
+    }
+    
+    highlightSearchTerm(text, searchTerm) {
+        if (!searchTerm || !text) return text;
+        
+        const regex = new RegExp(`(${searchTerm})`, 'gi');
+        return text.replace(regex, '<span class="search-result-highlight">$1</span>');
+    }
+    
+    handleSearchKeydown(e) {
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                this.selectedSearchIndex = Math.min(this.selectedSearchIndex + 1, this.searchResults.length - 1);
+                this.updateSearchSelection();
+                break;
+                
+            case 'ArrowUp':
+                e.preventDefault();
+                this.selectedSearchIndex = Math.max(this.selectedSearchIndex - 1, -1);
+                this.updateSearchSelection();
+                break;
+                
+            case 'Enter':
+                e.preventDefault();
+                if (this.selectedSearchIndex >= 0 && this.selectedSearchIndex < this.searchResults.length) {
+                    this.selectSearchResult(this.selectedSearchIndex);
+                }
+                break;
+                
+            case 'Escape':
+                this.hideSearchOverlay();
+                break;
+        }
+    }
+    
+    updateSearchSelection() {
+        document.querySelectorAll('.search-result-item').forEach((item, index) => {
+            item.classList.toggle('selected', index === this.selectedSearchIndex);
+        });
+        
+        // Scroll selected item into view
+        if (this.selectedSearchIndex >= 0) {
+            const selectedItem = document.querySelector('.search-result-item.selected');
+            if (selectedItem) {
+                selectedItem.scrollIntoView({ block: 'nearest' });
+            }
+        }
+    }
+    
+    selectSearchResult(index) {
+        const result = this.searchResults[index];
+        if (!result) return;
+        
+        this.hideSearchOverlay();
+        
+        if (result.type === 'article') {
+            // Show the article
+            const article = this.data.articles.find(art => art.id === result.id);
+            if (article) {
+                this.showArticle(article, result.category);
+            }
+        } else if (result.type === 'category') {
+            // Navigate to the category
+            this.navigateToCategory(result.title);
         }
     }
 }

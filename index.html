@@ -16,21 +16,16 @@
         <!-- Header -->
         <header class="header">
             <div class="header-left">
-                <div class="logo">DOOR Support</div>
+                <div class="logo" id="logoBtn">DOOR Support</div>
                 <button class="admin-btn" id="adminBtn">Admin</button>
-            </div>
-            <div class="header-center">
                 <div class="breadcrumb-container">
                     <nav class="breadcrumb" id="breadcrumb">
-                        <span class="breadcrumb-item">Inicio</span>
+                        <span class="breadcrumb-item">Home</span>
                     </nav>
-                    <div class="category-description" id="categoryDescription">
-                        <!-- Category description will appear here -->
-                    </div>
                 </div>
             </div>
             <div class="header-right">
-                <input type="search" placeholder="Buscar..." class="search-input">
+                <input type="search" placeholder="Search..." class="search-input" id="searchInput" readonly>
             </div>
         </header>
 
@@ -77,44 +72,44 @@
             </div>
             <div class="modal-body">
                 <div class="admin-tabs">
-                    <button class="tab-btn active" data-tab="categories">Categorías</button>
-                    <button class="tab-btn" data-tab="articles">Artículos</button>
+                    <button class="tab-btn active" data-tab="categories">Categories</button>
+                    <button class="tab-btn" data-tab="articles">Articles</button>
                 </div>
                 
                 <div class="tab-content" id="categoriesTab">
                     <div class="category-manager">
                         <div class="admin-section">
-                            <h3><i class="fas fa-folder-plus"></i> Crear Nueva Categoría</h3>
+                            <h3><i class="fas fa-folder-plus"></i> Create New Category</h3>
                             <form id="categoryForm">
                                 <div class="form-group">
-                                    <label for="categoryName">Nombre de la categoría</label>
-                                    <input type="text" placeholder="Ingrese el nombre de la categoría" id="categoryName" required>
+                                    <label for="categoryName">Category name</label>
+                                    <input type="text" placeholder="Enter the category name" id="categoryName" required>
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="parentCategory">Categoría padre</label>
+                                    <label for="parentCategory">Parent category</label>
                                     <select id="parentCategory" class="parent-category-select">
-                                        <option value="">📁 Categoría principal</option>
+                                        <option value="">📁 Main category</option>
                                     </select>
-                                    <small class="help-text">Selecciona una categoría padre para crear una subcategoría</small>
+                                    <small class="help-text">Select a parent category to create a subcategory</small>
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="categoryDescriptionInput">Descripción</label>
-                                    <textarea placeholder="Descripción opcional de la categoría" id="categoryDescriptionInput" rows="3"></textarea>
-                                    <small class="help-text">Esta descripción aparecerá en la barra superior cuando se seleccione la categoría</small>
+                                    <label for="categoryDescriptionInput">Description</label>
+                                    <textarea placeholder="Optional category description" id="categoryDescriptionInput" rows="3"></textarea>
+                                    <small class="help-text">This description will appear in the top bar when the category is selected</small>
                                 </div>
                                 
                                 <div class="form-actions">
                                     <button type="submit" class="admin-btn-primary">
-                                        <i class="fas fa-plus"></i> Crear Categoría
+                                        <i class="fas fa-plus"></i> Create Category
                                     </button>
                                 </div>
                             </form>
                         </div>
                         
                         <div class="admin-section" style="background: white;">
-                            <h4><i class="fas fa-sitemap"></i> Estructura de Categorías</h4>
+                            <h4><i class="fas fa-sitemap"></i> Category Structure</h4>
                             <div class="category-tree" id="categoryTree">
                                 <!-- Category tree will be rendered here -->
                             </div>
@@ -125,26 +120,26 @@
                 <div class="tab-content" id="articlesTab" style="display: none;">
                     <div class="article-manager">
                         <div class="admin-section">
-                            <h3><i class="fas fa-file-alt"></i> Editor de Artículos</h3>
+                            <h3><i class="fas fa-file-alt"></i> Article Editor</h3>
                             <form id="articleForm">
                                 <div class="form-group">
-                                    <label for="articleTitle">Título del artículo</label>
-                                    <input type="text" placeholder="Ingrese el título del artículo" id="articleTitle" required>
+                                    <label for="articleTitle">Article title</label>
+                                    <input type="text" placeholder="Enter the article title" id="articleTitle" required>
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label for="articleCategory">Categoría</label>
+                                    <label for="articleCategory">Category</label>
                                     <select id="articleCategory" class="parent-category-select" required>
-                                        <option value="">Seleccionar categoría</option>
+                                        <option value="">Select category</option>
                                     </select>
-                                    <small class="help-text">Selecciona la categoría donde se ubicará este artículo</small>
+                                    <small class="help-text">Select the category where this article will be located</small>
                                 </div>
                                 
                                 <div class="form-group">
-                                    <label>Contenido del artículo</label>
+                                    <label>Article content</label>
                                     <div class="editor-toolbar">
                                         <button type="button" class="admin-btn-secondary" id="addImageBtn">
-                                            <i class="fas fa-image"></i> Agregar Imagen
+                                            <i class="fas fa-image"></i> Add Image
                                         </button>
                                         <input type="file" id="imageUpload" accept="image/*" style="display: none;">
                                     </div>
@@ -155,17 +150,17 @@
                                 
                                 <div class="form-actions">
                                     <button type="button" id="previewBtn" class="admin-btn-secondary">
-                                        <i class="fas fa-eye"></i> Vista Previa
+                                        <i class="fas fa-eye"></i> Preview
                                     </button>
                                     <button type="submit" class="admin-btn-primary">
-                                        <i class="fas fa-save"></i> Guardar Artículo
+                                        <i class="fas fa-save"></i> Save Article
                                     </button>
                                 </div>
                             </form>
                         </div>
                         
                         <div class="admin-section" style="background: white;">
-                            <h4><i class="fas fa-list"></i> Artículos Existentes</h4>
+                            <h4><i class="fas fa-list"></i> Existing Articles</h4>
                             <div class="article-list" id="articleList">
                                 <!-- Articles will be listed here -->
                             </div>
@@ -180,7 +175,7 @@
     <div class="modal-overlay" id="previewModal">
         <div class="modal-content preview-modal">
             <div class="modal-header">
-                <h2>Vista Previa del Artículo</h2>
+                <h2>Article Preview</h2>
                 <button class="close-btn" id="closePreviewModal">&times;</button>
             </div>
             <div class="modal-body">
@@ -195,37 +190,70 @@
     <div class="modal-overlay" id="editCategoryModal">
         <div class="modal-content edit-category-modal">
             <div class="modal-header">
-                <h2><i class="fas fa-edit"></i> Editar Categoría</h2>
+                <h2><i class="fas fa-edit"></i> Edit Category</h2>
                 <button class="close-btn" id="closeEditCategoryModal">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="editCategoryForm" class="edit-category-form">
                     <div class="form-group">
-                        <label for="editCategoryName">Nombre de la categoría</label>
+                        <label for="editCategoryName">Category name</label>
                         <input type="text" id="editCategoryName" required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="editCategoryParent">Categoría padre</label>
+                        <label for="editCategoryParent">Parent category</label>
                         <select id="editCategoryParent">
-                            <option value="">Categoría principal</option>
+                            <option value="">Main category</option>
                         </select>
-                        <small class="help-text">Selecciona la categoría padre para cambiar la jerarquía</small>
+                        <small class="help-text">Select parent category to change hierarchy</small>
                     </div>
                     
                     <div class="form-group">
-                        <label for="editCategoryDescriptionText">Descripción</label>
-                        <textarea id="editCategoryDescriptionText" rows="3" placeholder="Descripción opcional de la categoría"></textarea>
-                        <small class="help-text">Esta descripción aparecerá en la barra superior cuando se seleccione la categoría</small>
+                        <label for="editCategoryDescriptionText">Description</label>
+                        <textarea id="editCategoryDescriptionText" rows="3" placeholder="Optional category description"></textarea>
+                        <small class="help-text">This description will appear in the top bar when the category is selected</small>
                     </div>
                     
                     <div class="form-actions">
-                        <button type="button" class="btn-cancel" id="cancelEditCategory">Cancelar</button>
+                        <button type="button" class="btn-cancel" id="cancelEditCategory">Cancel</button>
                         <button type="submit" class="btn-save-edit">
-                            <i class="fas fa-save"></i> Guardar Cambios
+                            <i class="fas fa-save"></i> Save Changes
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay">
+        <div class="search-container">
+            <div class="search-header">
+                <input type="text" class="search-input-large" id="searchInputLarge" placeholder="Search articles, categories, and guides..." autocomplete="off">
+            </div>
+            <div class="search-results" id="searchResults">
+                <div class="search-empty">
+                    <div class="search-empty-icon">🔍</div>
+                    <div class="search-empty-title">Start typing to search</div>
+                    <div class="search-empty-text">Find articles, categories, and guides across all sections</div>
+                </div>
+            </div>
+            <div class="search-footer">
+                <div class="search-shortcuts">
+                    <div class="search-shortcut">
+                        <span class="search-key">↵</span>
+                        <span>to select</span>
+                    </div>
+                    <div class="search-shortcut">
+                        <span class="search-key">↑</span>
+                        <span class="search-key">↓</span>
+                        <span>to navigate</span>
+                    </div>
+                </div>
+                <div class="search-shortcut">
+                    <span class="search-key">esc</span>
+                    <span>to close</span>
+                </div>
             </div>
         </div>
     </div>
