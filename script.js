@@ -22,36 +22,127 @@ class SupportSite {
     loadData() {
         const savedData = localStorage.getItem('doorSupportData');
         if (savedData) {
-            this.data = JSON.parse(savedData);
+            const parsedData = JSON.parse(savedData);
+            // Check if we need to update to new structure
+            if (!parsedData.categories.some(cat => cat.name === "I'm Living in a Property")) {
+                // Old structure detected, reset to new structure
+                localStorage.removeItem('doorSupportData');
+                this.loadDefaultData();
+            } else {
+                this.data = parsedData;
+            }
         } else {
-            // Sample data
-            this.data = {
+            this.loadDefaultData();
+        }
+    }
+
+    loadDefaultData() {
+        this.data = {
                 categories: [
-                    { id: '1', name: 'Primeros Pasos', parentId: null, description: 'Todo lo que necesitas saber para comenzar con DOOR: instalación, configuración inicial y primeros pasos.' },
-                    { id: '2', name: 'Instalación', parentId: '1', description: 'Guías detalladas para instalar DOOR en diferentes entornos y configuraciones de sistema.' },
-                    { id: '3', name: 'Configuración', parentId: '1', description: 'Configuración inicial del sistema, usuarios, permisos y personalización de parámetros.' },
-                    { id: '4', name: 'Funcionalidades', parentId: null, description: 'Descubre todas las características y capacidades avanzadas que ofrece la plataforma DOOR.' },
-                    { id: '5', name: 'Control de Acceso', parentId: '4', description: 'Gestión completa de usuarios, tarjetas, códigos PIN y configuración de zonas de acceso.' },
-                    { id: '6', name: 'Monitoreo', parentId: '4', description: 'Herramientas de monitoreo en tiempo real, reportes y análisis de actividad del sistema.' },
-                    { id: '7', name: 'Soporte Técnico', parentId: null, description: 'Recursos de ayuda, solución de problemas comunes y contacto con nuestro equipo de soporte.' }
+                    // Main Categories
+                    { id: '1', name: 'I\'m Living in a Property', parentId: null, description: 'This section is for people who live in a Door-enabled building and use the app for their own access.' },
+                    { id: '2', name: 'I\'m Visiting a Property', parentId: null, description: 'This section is for visitors, friends, or family who have been given temporary access by a resident.' },
+                    { id: '3', name: 'I\'m Managing a Property', parentId: null, description: 'This section is for property managers, landlords, or building staff responsible for managing a property.' },
+                    { id: '4', name: 'I\'m Installing Devices', parentId: null, description: 'This section is for professional installers, technicians, or skilled staff tasked with the physical installation of Door hardware.' },
+                    
+                    // Living in a Property Subcategories
+                    { id: '5', name: 'Getting Started with the Door App', parentId: '1', description: '' },
+                    { id: '6', name: 'Everyday Use', parentId: '1', description: '' },
+                    { id: '7', name: 'Sharing Access with Guests', parentId: '1', description: '' },
+                    { id: '8', name: 'Smart Home Integration', parentId: '1', description: '' },
+                    { id: '9', name: 'Troubleshooting & Support', parentId: '1', description: '' },
+                    
+                    // Visiting a Property Subcategories
+                    { id: '10', name: 'Using Your Temporary Key', parentId: '2', description: '' },
+                    { id: '11', name: 'Troubleshooting', parentId: '2', description: '' },
+                    
+                    // Managing a Property Subcategories
+                    { id: '12', name: 'Setting Up Your Property', parentId: '3', description: '' },
+                    { id: '13', name: 'Daily Operations', parentId: '3', description: '' },
+                    { id: '14', name: 'Advanced Management', parentId: '3', description: '' },
+                    { id: '15', name: 'Troubleshooting & Support', parentId: '3', description: '' },
+                    
+                    // Installing Devices Subcategories
+                    { id: '16', name: 'Pre-Installation', parentId: '4', description: '' },
+                    { id: '17', name: 'Installation Process', parentId: '4', description: '' },
+                    { id: '18', name: 'Post-Installation & Testing', parentId: '4', description: '' },
+                    { id: '19', name: 'Troubleshooting', parentId: '4', description: '' }
                 ],
                 articles: [
+                    // Getting Started with the Door App (Category 5)
                     {
                         id: '1',
-                        title: 'Bienvenido a DOOR',
-                        categoryId: '1',
-                        content: `<h1>Bienvenido a DOOR</h1><p>¡Gracias por elegir DOOR para sus necesidades de control de acceso inteligente!</p><h2>¿Qué es DOOR?</h2><p>DOOR es una plataforma integral de gestión de accesos que combina tecnología de vanguardia con facilidad de uso para brindar soluciones de seguridad inteligentes para edificios y espacios.</p><h2>Características principales</h2><h3>Control de Acceso Inteligente</h3><ul><li>Gestión centralizada de usuarios y permisos</li><li>Acceso mediante tarjetas, códigos PIN o aplicación móvil</li><li>Configuración flexible de horarios y zonas</li></ul><h3>Monitoreo en Tiempo Real</h3><ul><li>Visualización de eventos de acceso en tiempo real</li><li>Alertas automáticas de seguridad</li><li>Reportes detallados de actividad</li></ul><h3>Integración Avanzada</h3><ul><li>Compatible con sistemas de videovigilancia</li><li>Integración con sistemas de gestión de edificios</li><li>API para integraciones personalizadas</li></ul><h2>Primeros pasos</h2><ol><li><strong>Instalación</strong>: Revise nuestra guía de instalación para configurar su sistema</li><li><strong>Configuración</strong>: Configure usuarios, permisos y zonas de acceso</li><li><strong>Pruebas</strong>: Realice pruebas para verificar el correcto funcionamiento</li><li><strong>Capacitación</strong>: Capacite a su equipo en el uso del sistema</li></ol><p>¿Necesita ayuda? Consulte nuestra sección de soporte técnico o contacte a nuestro equipo.</p>`
+                        title: 'What is the Door App?',
+                        categoryId: '5',
+                        content: `<h1>What is the Door App?</h1><p>The Door App is your key to seamless access control in Door-enabled buildings. This comprehensive mobile application transforms your smartphone into a digital key, allowing you to unlock doors, manage access, and control smart home devices with ease.</p><h2>Key Features</h2><ul><li><strong>Digital Key Technology</strong>: Use your phone as a secure digital key</li><li><strong>Guest Access Management</strong>: Share temporary keys with visitors</li><li><strong>Access History</strong>: View your personal door usage history</li><li><strong>Smart Home Integration</strong>: Control connected devices and create automations</li><li><strong>Real-time Notifications</strong>: Stay informed about access events</li></ul><h2>Getting Started</h2><p>Download the Door App from your device's app store and follow the setup process to begin using your digital access solution.</p>`
                     },
                     {
                         id: '2',
-                        title: 'Requisitos del Sistema',
-                        categoryId: '2',
-                        content: `<h1>Requisitos del Sistema</h1><p>Antes de instalar DOOR, asegúrese de que su sistema cumple con los siguientes requisitos.</p><h2>Requisitos de Hardware</h2><h3>Servidor Principal</h3><ul><li><strong>Procesador</strong>: Intel Core i5 o superior (recomendado: Intel Core i7)</li><li><strong>Memoria RAM</strong>: 8 GB mínimo (recomendado: 16 GB)</li><li><strong>Almacenamiento</strong>: 500 GB SSD (recomendado: 1 TB SSD)</li><li><strong>Red</strong>: Puerto Ethernet Gigabit</li></ul><h3>Controladores de Acceso</h3><ul><li><strong>Procesador</strong>: ARM Cortex-A7 o superior</li><li><strong>Memoria</strong>: 1 GB RAM, 8 GB almacenamiento</li><li><strong>Conectividad</strong>: Ethernet y Wi-Fi 802.11n</li><li><strong>Alimentación</strong>: 12V DC, 2A</li></ul><h2>Requisitos de Software</h2><h3>Sistema Operativo del Servidor</h3><ul><li>Ubuntu 20.04 LTS o superior</li><li>Windows Server 2019 o superior</li><li>CentOS 8 o superior</li></ul><h3>Base de Datos</h3><ul><li>PostgreSQL 12 o superior (recomendado)</li><li>MySQL 8.0 o superior</li><li>SQL Server 2019 o superior</li></ul><h3>Navegadores Web Compatibles</h3><ul><li>Chrome 90 o superior</li><li>Firefox 88 o superior</li><li>Safari 14 o superior</li><li>Edge 90 o superior</li></ul><h2>Requisitos de Red</h2><h3>Ancho de Banda</h3><ul><li><strong>Mínimo</strong>: 10 Mbps por cada 100 usuarios concurrentes</li><li><strong>Recomendado</strong>: 100 Mbps para instalaciones grandes</li></ul><h3>Puertos de Red</h3><ul><li><strong>HTTP</strong>: Puerto 80</li><li><strong>HTTPS</strong>: Puerto 443</li><li><strong>API</strong>: Puerto 8080</li><li><strong>Base de datos</strong>: Puerto 5432 (PostgreSQL) o 3306 (MySQL)</li></ul><h3>Configuración de Firewall</h3><p>Asegúrese de que los siguientes puertos estén abiertos:</p><ul><li>Puertos 80 y 443 para acceso web</li><li>Puerto 8080 para comunicación API</li><li>Puertos personalizados para controladores de acceso</li></ul><h2>Consideraciones de Seguridad</h2><ul><li><strong>Certificados SSL</strong>: Requeridos para producción</li><li><strong>VPN</strong>: Recomendado para acceso remoto</li><li><strong>Actualizaciones</strong>: Mantenga el sistema actualizado</li><li><strong>Backups</strong>: Configure respaldos automáticos diarios</li></ul>`
+                        title: 'Setting Up Your Account for the First Time',
+                        categoryId: '5',
+                        content: `<h1>Setting Up Your Account for the First Time</h1><p>Welcome to Door! Follow these simple steps to set up your account and start using your digital key.</p><h2>Step 1: Download the App</h2><ul><li>Download "Door" from the App Store (iOS) or Google Play Store (Android)</li><li>Ensure you have the latest version installed</li></ul><h2>Step 2: Create Your Account</h2><ol><li>Open the Door app</li><li>Tap "Create Account"</li><li>Enter your email address and create a secure password</li><li>Verify your email through the confirmation link sent to your inbox</li></ol><h2>Step 3: Connect to Your Building</h2><ol><li>Enter the building code provided by your property manager</li><li>Confirm your unit number or apartment details</li><li>Wait for approval from your property management team</li></ol><h2>Step 4: Set Up Your Profile</h2><ul><li>Add your name and profile photo</li><li>Configure notification preferences</li><li>Set up biometric authentication (Face ID/Touch ID) for quick access</li></ul><p>Once approved, you'll receive a notification confirming your access has been activated!</p>`
+                    },
+                    {
+                        id: '3',
+                        title: 'A Quick Tour of the App',
+                        categoryId: '5',
+                        content: `<h1>A Quick Tour of the App</h1><p>Get familiar with the Door app interface and discover all the features at your fingertips.</p><h2>Home Screen</h2><p>Your main dashboard shows:</p><ul><li><strong>Quick Unlock</strong>: Large unlock button for immediate door access</li><li><strong>Recent Activity</strong>: Your latest door entries and exits</li><li><strong>Active Keys</strong>: Digital keys currently available to you</li><li><strong>Smart Devices</strong>: Quick access to connected home automation</li></ul><h2>Navigation Menu</h2><h3>🏠 Home</h3><p>Your main dashboard with quick access to all essential features</p><h3>🔑 My Keys</h3><p>View and manage all your digital keys, including guest keys you've shared</p><h3>📊 Activity</h3><p>Detailed history of your access events and door usage</p><h3>👥 Guests</h3><p>Create, manage, and revoke temporary keys for visitors</p><h3>🏡 Smart Home</h3><p>Control connected devices, create scenes, and manage automations</p><h3>⚙️ Settings</h3><p>Account preferences, notifications, security settings, and more</p><h2>Quick Actions</h2><ul><li><strong>Swipe down</strong> on home screen for quick unlock</li><li><strong>3D Touch/Long press</strong> app icon for shortcuts</li><li><strong>Voice commands</strong> with Siri or Google Assistant integration</li></ul>`
+                    },
+                    
+                    // Everyday Use (Category 6)
+                    {
+                        id: '4',
+                        title: 'How to Unlock a Door with Your Phone',
+                        categoryId: '6',
+                        content: `<h1>How to Unlock a Door with Your Phone</h1><p>Unlocking doors with your Door app is simple and secure. Here are the different methods available to you.</p><h2>Method 1: Bluetooth Proximity</h2><ol><li>Approach the door with your phone</li><li>The app will automatically detect the nearby Door device</li><li>Tap the unlock notification that appears</li><li>The door will unlock within 2-3 seconds</li></ol><h2>Method 2: Manual Unlock</h2><ol><li>Open the Door app</li><li>Tap the large "Unlock" button on the home screen</li><li>Select the door you want to unlock from the list</li><li>Confirm the unlock action</li></ol><h2>Method 3: Widget/Quick Action</h2><ul><li><strong>iOS</strong>: Add Door widget to Control Center or use 3D Touch</li><li><strong>Android</strong>: Use Door widget on home screen or notification shortcuts</li></ul><h2>Troubleshooting Tips</h2><ul><li>Ensure Bluetooth is enabled on your device</li><li>Make sure you're within 10 feet of the door</li><li>Check that your access permissions are active</li><li>Restart the app if experiencing connection issues</li></ul><h2>Security Features</h2><p>All unlock attempts are logged and encrypted. You can view your access history in the Activity section of the app.</p>`
+                    },
+                    {
+                        id: '5',
+                        title: 'Viewing Your Personal Access History',
+                        categoryId: '6',
+                        content: `<h1>Viewing Your Personal Access History</h1><p>Keep track of your door access activity with detailed history logs available in your Door app.</p><h2>Accessing Your History</h2><ol><li>Open the Door app</li><li>Tap "Activity" in the bottom navigation</li><li>View your chronological access history</li></ol><h2>Understanding Your Activity Log</h2><p>Each entry shows:</p><ul><li><strong>Date & Time</strong>: When the access occurred</li><li><strong>Door Location</strong>: Which door was accessed (e.g., "Main Entrance", "Unit 4B")</li><li><strong>Access Method</strong>: How you unlocked (App, Bluetooth, Guest Key)</li><li><strong>Status</strong>: Success or failed attempt</li><li><strong>Duration</strong>: How long the door remained unlocked</li></ul><h2>Filtering and Search</h2><ul><li><strong>Date Range</strong>: Filter by specific time periods</li><li><strong>Door Type</strong>: Show only specific doors</li><li><strong>Access Method</strong>: Filter by unlock method</li><li><strong>Search</strong>: Find specific events by keyword</li></ul><h2>Export Options</h2><p>You can export your access history for:</p><ul><li>Personal records</li><li>Insurance purposes</li><li>Security audits</li><li>Sharing with property management if needed</li></ul><h2>Privacy & Security</h2><p>Your access history is:</p><ul><li>Encrypted and stored securely</li><li>Only visible to you and authorized property staff</li><li>Automatically archived after 12 months</li><li>Never shared with third parties</li></ul>`
+                    },
+                    {
+                        id: '6',
+                        title: 'Managing Your Account Profile and Settings',
+                        categoryId: '6',
+                        content: `<h1>Managing Your Account Profile and Settings</h1><p>Customize your Door app experience and manage your account preferences through the settings menu.</p><h2>Profile Settings</h2><h3>Personal Information</h3><ul><li><strong>Name</strong>: Update your display name</li><li><strong>Photo</strong>: Add or change your profile picture</li><li><strong>Contact Info</strong>: Manage email and phone number</li><li><strong>Emergency Contact</strong>: Set up emergency contact information</li></ul><h2>Security Settings</h2><h3>Authentication</h3><ul><li><strong>Biometric Lock</strong>: Enable Face ID, Touch ID, or fingerprint</li><li><strong>PIN Protection</strong>: Add an additional PIN for app access</li><li><strong>Auto-lock Timer</strong>: Set how long before app locks automatically</li></ul><h3>Access Control</h3><ul><li><strong>Bluetooth Range</strong>: Adjust proximity unlock sensitivity</li><li><strong>Quick Unlock</strong>: Enable/disable instant unlock features</li><li><strong>Voice Commands</strong>: Configure Siri/Google Assistant integration</li></ul><h2>Notification Preferences</h2><ul><li><strong>Access Alerts</strong>: Get notified when doors are unlocked</li><li><strong>Guest Activity</strong>: Receive updates on guest key usage</li><li><strong>System Updates</strong>: Stay informed about app and system changes</li><li><strong>Marketing</strong>: Opt-in/out of promotional communications</li></ul><h2>Privacy Controls</h2><ul><li><strong>Data Sharing</strong>: Control what information is shared</li><li><strong>Location Services</strong>: Manage location-based features</li><li><strong>Activity Visibility</strong>: Set who can see your access patterns</li></ul><h2>App Preferences</h2><ul><li><strong>Theme</strong>: Choose between light, dark, or auto themes</li><li><strong>Language</strong>: Select your preferred language</li><li><strong>Measurements</strong>: Imperial or metric units</li><li><strong>Startup Screen</strong>: Choose default app screen</li></ul>`
+                    },
+
+                    // Add sample articles for other categories
+                    {
+                        id: '7',
+                        title: 'How to Share a Temporary Key with a Guest',
+                        categoryId: '7',
+                        content: `<h1>How to Share a Temporary Key with a Guest</h1><p>Easily provide secure, temporary access to visitors using the Door app's guest key feature.</p><h2>Creating a Guest Key</h2><ol><li>Open the Door app and tap "Guests"</li><li>Tap "+ New Guest Key"</li><li>Enter guest information (name, phone/email)</li><li>Set access permissions and schedule</li><li>Choose which doors they can access</li><li>Set start and end dates/times</li><li>Send the invitation</li></ol><h2>Access Options</h2><ul><li><strong>Time-limited</strong>: Set specific start and end times</li><li><strong>Usage-limited</strong>: Limit number of uses</li><li><strong>Door-specific</strong>: Choose which doors guest can access</li><li><strong>Recurring</strong>: Set up regular access patterns</li></ul><p>Your guest will receive instructions via SMS or email on how to use their temporary access.</p>`
+                    },
+
+                    // Visiting a Property Articles
+                    {
+                        id: '8',
+                        title: 'How to Accept a Shared Key Invitation',
+                        categoryId: '10',
+                        content: `<h1>How to Accept a Shared Key Invitation</h1><p>When someone shares a temporary key with you, follow these steps to gain access to their building.</p><h2>Receiving Your Invitation</h2><p>You'll receive an invitation via:</p><ul><li>SMS text message with a link</li><li>Email with instructions</li><li>QR code to scan</li></ul><h2>Setting Up Access</h2><ol><li>Download the Door app if you don't have it</li><li>Tap the invitation link or scan the QR code</li><li>Create a guest account or sign in</li><li>Accept the shared key invitation</li><li>Review your access permissions and schedule</li></ol><h2>Important Notes</h2><ul><li>Guest keys are temporary and will expire automatically</li><li>You can only access the doors specified by the host</li><li>Your access is limited to the dates and times set by the host</li><li>All your access activity is logged and visible to the host</li></ul>`
+                    },
+
+                    // Managing a Property Articles
+                    {
+                        id: '9',
+                        title: 'What is the Door Manager? A Complete Overview',
+                        categoryId: '12',
+                        content: `<h1>What is the Door Manager? A Complete Overview</h1><p>Door Manager is a comprehensive web-based platform designed for property managers, landlords, and building staff to manage access control across their properties.</p><h2>Key Features</h2><h3>Centralized Management</h3><ul><li>Manage multiple buildings from one dashboard</li><li>Control all doors and access points</li><li>Oversee resident and visitor access</li></ul><h3>User Administration</h3><ul><li>Add, remove, and edit resident profiles</li><li>Issue and revoke digital keys</li><li>Manage staff and contractor access</li></ul><h3>Monitoring & Analytics</h3><ul><li>Real-time access monitoring</li><li>Detailed activity reports</li><li>Security event notifications</li><li>Usage analytics and insights</li></ul><h3>Advanced Controls</h3><ul><li>Create custom access groups</li><li>Set door schedules and lockdowns</li><li>Manage integration with other systems</li></ul><h2>Getting Started</h2><p>Access Door Manager through your web browser at manager.door.com using your administrator credentials provided during setup.</p>`
+                    },
+
+                    // Installing Devices Articles
+                    {
+                        id: '10',
+                        title: 'Device Overview: Types of Door Access Hardware',
+                        categoryId: '16',
+                        content: `<h1>Device Overview: Types of Door Access Hardware</h1><p>Understanding the different types of Door hardware available for installation will help you choose the right solution for each access point.</p><h2>Door Controllers</h2><h3>Smart Lock Controller</h3><ul><li><strong>Use Case</strong>: Individual unit doors, office entrances</li><li><strong>Features</strong>: Bluetooth, Wi-Fi, mechanical backup</li><li><strong>Power</strong>: Battery or hardwired options</li><li><strong>Installation</strong>: Replaces existing deadbolt</li></ul><h3>Strike Plate Controller</h3><ul><li><strong>Use Case</strong>: Main building entrances, lobby doors</li><li><strong>Features</strong>: Electric strike integration, fail-safe operation</li><li><strong>Power</strong>: 12V DC, low voltage wiring</li><li><strong>Installation</strong>: Integrates with existing strike plates</li></ul><h2>Access Readers</h2><h3>Bluetooth Proximity Reader</h3><ul><li><strong>Use Case</strong>: High-traffic areas, hands-free access</li><li><strong>Range</strong>: Configurable 3-30 feet</li><li><strong>Mounting</strong>: Wall-mounted, weather-resistant</li></ul><h3>Mobile App Reader</h3><ul><li><strong>Use Case</strong>: Secure areas requiring manual unlock</li><li><strong>Features</strong>: QR code backup, manual override</li><li><strong>Installation</strong>: Minimal hardware requirements</li></ul><h2>System Components</h2><ul><li><strong>Bridge Units</strong>: Network connectivity hubs</li><li><strong>Power Supplies</strong>: Centralized or distributed power</li><li><strong>Backup Systems</strong>: Battery backup and mechanical overrides</li></ul>`
                     }
                 ]
-            };
-            this.saveData();
-        }
+        };
+        this.saveData();
     }
 
     saveData() {
