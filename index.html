@@ -83,23 +83,37 @@
                 
                 <div class="tab-content" id="categoriesTab">
                     <div class="category-manager">
-                        <div class="category-form-section">
-                            <h3><i class="fas fa-folder-plus"></i> Gestionar Categorías</h3>
-                            <form id="categoryForm" class="category-form">
-                                <div class="form-row">
-                                    <input type="text" placeholder="Nombre de la categoría" id="categoryName" required>
-                                    <select id="parentCategory">
-                                        <option value="">Categoría principal</option>
-                                    </select>
+                        <div class="admin-section">
+                            <h3><i class="fas fa-folder-plus"></i> Crear Nueva Categoría</h3>
+                            <form id="categoryForm">
+                                <div class="form-group">
+                                    <label for="categoryName">Nombre de la categoría</label>
+                                    <input type="text" placeholder="Ingrese el nombre de la categoría" id="categoryName" required>
                                 </div>
-                                <div class="form-row description-row">
-                                    <textarea placeholder="Descripción de la categoría (opcional)" id="categoryDescriptionInput" rows="2"></textarea>
-                                    <button type="submit"><i class="fas fa-plus"></i> Agregar Categoría</button>
+                                
+                                <div class="form-group">
+                                    <label for="parentCategory">Categoría padre</label>
+                                    <select id="parentCategory" class="parent-category-select">
+                                        <option value="">📁 Categoría principal</option>
+                                    </select>
+                                    <small class="help-text">Selecciona una categoría padre para crear una subcategoría</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="categoryDescriptionInput">Descripción</label>
+                                    <textarea placeholder="Descripción opcional de la categoría" id="categoryDescriptionInput" rows="3"></textarea>
+                                    <small class="help-text">Esta descripción aparecerá en la barra superior cuando se seleccione la categoría</small>
+                                </div>
+                                
+                                <div class="form-actions">
+                                    <button type="submit" class="admin-btn-primary">
+                                        <i class="fas fa-plus"></i> Crear Categoría
+                                    </button>
                                 </div>
                             </form>
                         </div>
                         
-                        <div class="category-tree-section">
+                        <div class="admin-section" style="background: white;">
                             <h4><i class="fas fa-sitemap"></i> Estructura de Categorías</h4>
                             <div class="category-tree" id="categoryTree">
                                 <!-- Category tree will be rendered here -->
@@ -110,9 +124,9 @@
 
                 <div class="tab-content" id="articlesTab" style="display: none;">
                     <div class="article-manager">
-                        <div class="article-form-section">
+                        <div class="admin-section">
                             <h3><i class="fas fa-file-alt"></i> Editor de Artículos</h3>
-                            <form id="articleForm" class="article-form">
+                            <form id="articleForm">
                                 <div class="form-group">
                                     <label for="articleTitle">Título del artículo</label>
                                     <input type="text" placeholder="Ingrese el título del artículo" id="articleTitle" required>
@@ -120,15 +134,16 @@
                                 
                                 <div class="form-group">
                                     <label for="articleCategory">Categoría</label>
-                                    <select id="articleCategory" required>
+                                    <select id="articleCategory" class="parent-category-select" required>
                                         <option value="">Seleccionar categoría</option>
                                     </select>
+                                    <small class="help-text">Selecciona la categoría donde se ubicará este artículo</small>
                                 </div>
                                 
                                 <div class="form-group">
                                     <label>Contenido del artículo</label>
                                     <div class="editor-toolbar">
-                                        <button type="button" class="toolbar-btn" id="addImageBtn">
+                                        <button type="button" class="admin-btn-secondary" id="addImageBtn">
                                             <i class="fas fa-image"></i> Agregar Imagen
                                         </button>
                                         <input type="file" id="imageUpload" accept="image/*" style="display: none;">
@@ -139,17 +154,17 @@
                                 </div>
                                 
                                 <div class="form-actions">
-                                    <button type="button" id="previewBtn" class="btn-preview">
+                                    <button type="button" id="previewBtn" class="admin-btn-secondary">
                                         <i class="fas fa-eye"></i> Vista Previa
                                     </button>
-                                    <button type="submit" class="btn-save">
+                                    <button type="submit" class="admin-btn-primary">
                                         <i class="fas fa-save"></i> Guardar Artículo
                                     </button>
                                 </div>
                             </form>
                         </div>
                         
-                        <div class="article-list-section">
+                        <div class="admin-section" style="background: white;">
                             <h4><i class="fas fa-list"></i> Artículos Existentes</h4>
                             <div class="article-list" id="articleList">
                                 <!-- Articles will be listed here -->

@@ -471,21 +471,66 @@ body {
     border-color: #1a1a1a;
 }
 
-.form-section button {
+/* Standardized Admin Buttons */
+.admin-btn-primary,
+.form-section button,
+.btn-save,
+.btn-save-edit {
     background: #1a1a1a;
     color: white;
     border: none;
     padding: 12px 24px;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
 }
 
-.form-section button:hover {
+.admin-btn-primary:hover,
+.form-section button:hover,
+.btn-save:hover,
+.btn-save-edit:hover {
     background: #333;
     transform: translateY(-1px);
+}
+
+.admin-btn-secondary,
+.btn-cancel,
+.btn-preview {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: center;
+}
+
+.admin-btn-secondary:hover,
+.btn-cancel:hover,
+.btn-preview:hover {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e1e5e9;
 }
 
 .category-list,
@@ -643,30 +688,114 @@ body {
 }
 
 /* Enhanced Admin Styles */
-.category-manager {
+.category-manager,
+.article-manager {
     display: grid;
     gap: 24px;
 }
 
-.category-form-section {
+/* Consistent Section Styling */
+.admin-section {
     background: #f8fafc;
     border-radius: 12px;
     padding: 24px;
     border: 1px solid #e1e5e9;
 }
 
-.category-form-section h3 {
+.admin-section h3,
+.admin-section h4 {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 16px;
     font-weight: 600;
     color: #1a1a1a;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
 }
 
-.category-form-section h3 i {
+.admin-section h3 i,
+.admin-section h4 i {
     color: #6b7280;
+}
+
+/* Standardized Form Groups */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background: white;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #1a1a1a;
+    box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.4;
+}
+
+.form-group .help-text {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* Enhanced Parent Category Selector */
+.parent-category-select {
+    position: relative;
+}
+
+.parent-category-select option {
+    padding: 8px 12px;
+}
+
+.parent-category-select option[data-level="0"] {
+    font-weight: 600;
+    background: #f3f4f6;
+}
+
+.parent-category-select option[data-level="1"] {
+    padding-left: 24px;
+    color: #4b5563;
+}
+
+.parent-category-select option[data-level="2"] {
+    padding-left: 36px;
+    color: #6b7280;
+}
+
+/* Legacy form styles for backwards compatibility */
+.category-form-section {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #e1e5e9;
 }
 
 .category-form .form-row {
@@ -686,7 +815,7 @@ body {
     resize: vertical;
     min-height: 44px;
     max-height: 120px;
-    padding: 8px 12px;
+    padding: 12px;
     border: 1px solid #d1d5db;
     border-radius: 8px;
     font-size: 14px;
@@ -812,6 +941,16 @@ body {
     gap: 8px;
 }
 
+.tree-node-level-indicator {
+    font-size: 11px;
+    color: #9ca3af;
+    background: #f3f4f6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: auto;
+    white-space: nowrap;
+}
+
 .tree-node-icon {
     color: #6b7280;
     font-size: 14px;
@@ -823,6 +962,21 @@ body {
     color: #1a1a1a;
     min-width: 0;
     flex: 1;
+}
+
+.tree-node[data-level="0"] .tree-node-name {
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.tree-node[data-level="1"] .tree-node-name {
+    font-weight: 500;
+    color: #374151;
+}
+
+.tree-node[data-level="2"] .tree-node-name {
+    font-weight: 400;
+    color: #6b7280;
 }
 
 .tree-node-name.editing {

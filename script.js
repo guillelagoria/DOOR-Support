@@ -558,13 +558,20 @@ class SupportSite {
         const subcategories = this.data.categories.filter(cat => cat.parentId === category.id);
         const hasChildren = subcategories.length > 0;
         
+        // Determine category level and icon
+        const categoryLevel = this.getCategoryLevel(category.id);
+        const levelIcon = categoryLevel === 0 ? 'fas fa-folder' : categoryLevel === 1 ? 'fas fa-folder-open' : 'fas fa-file-alt';
+        const levelLabel = categoryLevel === 0 ? 'Categoría Principal' : categoryLevel === 1 ? 'Subcategoría' : 'Subcategoría de Nivel 2';
+
         item.innerHTML = `
             <div class="tree-node ${hasChildren ? 'has-children' : ''} draggable" 
                  data-category-id="${category.id}" 
+                 data-level="${categoryLevel}"
                  draggable="true">
                 <div class="tree-node-content">
-                    <i class="tree-node-icon fas fa-folder"></i>
+                    <i class="tree-node-icon ${levelIcon}"></i>
                     <span class="tree-node-name">${category.name}</span>
+                    <span class="tree-node-level-indicator">${levelLabel}</span>
                     <input type="text" class="tree-node-edit-input" value="${category.name}">
                     <div class="tree-node-edit-actions">
                         <button class="edit-action-btn save">✓</button>
@@ -614,25 +621,91 @@ class SupportSite {
 
     updateParentCategoryOptions() {
         const select = document.getElementById('parentCategory');
-        select.innerHTML = '<option value="">Categoría principal</option>';
+        select.innerHTML = '<option value="">📁 Categoría principal</option>';
         
-        this.data.categories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category.id;
-            option.textContent = category.name;
-            select.appendChild(option);
+        // Create hierarchical category options
+        const rootCategories = this.data.categories.filter(cat => !cat.parentId);
+        
+        rootCategories.forEach(category => {
+            this.addCategoryOption(select, category, 0);
+        });
+    }
+
+    addCategoryOption(select, category, level) {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.setAttribute('data-level', level.toString());
+        
+        // Create indentation and visual hierarchy
+        const indent = '　'.repeat(level); // Using full-width space for better indentation
+        const icon = level === 0 ? '📁' : level === 1 ? '📂' : '📄';
+        const prefix = level === 0 ? '' : level === 1 ? '└─ ' : '　└─ ';
+        
+        option.textContent = `${indent}${prefix}${icon} ${category.name}`;
+        
+        // Add styling attributes for CSS
+        if (level === 0) {
+            option.style.fontWeight = '600';
+            option.style.backgroundColor = '#f3f4f6';
+        } else if (level === 1) {
+            option.style.paddingLeft = '24px';
+            option.style.color = '#4b5563';
+        } else {
+            option.style.paddingLeft = '36px';
+            option.style.color = '#6b7280';
+        }
+        
+        select.appendChild(option);
+
+        // Add child categories recursively
+        const children = this.data.categories.filter(cat => cat.parentId === category.id);
+        children.forEach(child => {
+            this.addCategoryOption(select, child, level + 1);
         });
     }
 
     updateArticleCategoryOptions() {
         const select = document.getElementById('articleCategory');
-        select.innerHTML = '<option value="">Seleccionar categoría</option>';
+        select.innerHTML = '<option value="">📋 Seleccionar categoría</option>';
         
-        this.data.categories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category.id;
-            option.textContent = category.name;
-            select.appendChild(option);
+        // Create hierarchical category options for articles
+        const rootCategories = this.data.categories.filter(cat => !cat.parentId);
+        
+        rootCategories.forEach(category => {
+            this.addArticleCategoryOption(select, category, 0);
+        });
+    }
+
+    addArticleCategoryOption(select, category, level) {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.setAttribute('data-level', level.toString());
+        
+        // Create indentation and visual hierarchy
+        const indent = '　'.repeat(level);
+        const icon = level === 0 ? '📁' : level === 1 ? '📂' : '📄';
+        const prefix = level === 0 ? '' : level === 1 ? '└─ ' : '　└─ ';
+        
+        option.textContent = `${indent}${prefix}${icon} ${category.name}`;
+        
+        // Add styling attributes
+        if (level === 0) {
+            option.style.fontWeight = '600';
+            option.style.backgroundColor = '#f3f4f6';
+        } else if (level === 1) {
+            option.style.paddingLeft = '24px';
+            option.style.color = '#4b5563';
+        } else {
+            option.style.paddingLeft = '36px';
+            option.style.color = '#6b7280';
+        }
+        
+        select.appendChild(option);
+
+        // Add child categories recursively
+        const children = this.data.categories.filter(cat => cat.parentId === category.id);
+        children.forEach(child => {
+            this.addArticleCategoryOption(select, child, level + 1);
         });
     }
 
@@ -939,6 +1012,12 @@ class SupportSite {
         return this.isDescendant(ancestorId, category.parentId);
     }
 
+    getCategoryLevel(categoryId) {
+        const category = this.data.categories.find(cat => cat.id === categoryId);
+        if (!category || !category.parentId) return 0;
+        return 1 + this.getCategoryLevel(category.parentId);
+    }
+
     showEditCategoryModal(categoryId) {
         const category = this.data.categories.find(cat => cat.id === categoryId);
         if (!category) return;
@@ -960,20 +1039,56 @@ class SupportSite {
 
     populateEditParentOptions(excludeCategoryId) {
         const select = document.getElementById('editCategoryParent');
-        select.innerHTML = '<option value="">Categoría principal</option>';
+        select.innerHTML = '<option value="">📁 Categoría principal</option>';
 
-        // Get all categories except the one being edited and its descendants
-        const availableCategories = this.data.categories.filter(cat => {
+        // Get root categories that are available (excluding the one being edited and its descendants)
+        const rootCategories = this.data.categories.filter(cat => {
+            if (cat.id === excludeCategoryId) return false;
+            if (this.isDescendant(excludeCategoryId, cat.id)) return false;
+            return !cat.parentId;
+        });
+
+        rootCategories.forEach(category => {
+            this.addEditParentOption(select, category, 0, excludeCategoryId);
+        });
+    }
+
+    addEditParentOption(select, category, level, excludeCategoryId) {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.setAttribute('data-level', level.toString());
+        
+        // Create indentation and visual hierarchy
+        const indent = '　'.repeat(level);
+        const icon = level === 0 ? '📁' : level === 1 ? '📂' : '📄';
+        const prefix = level === 0 ? '' : level === 1 ? '└─ ' : '　└─ ';
+        
+        option.textContent = `${indent}${prefix}${icon} ${category.name}`;
+        
+        // Add styling attributes
+        if (level === 0) {
+            option.style.fontWeight = '600';
+            option.style.backgroundColor = '#f3f4f6';
+        } else if (level === 1) {
+            option.style.paddingLeft = '24px';
+            option.style.color = '#4b5563';
+        } else {
+            option.style.paddingLeft = '36px';
+            option.style.color = '#6b7280';
+        }
+        
+        select.appendChild(option);
+
+        // Add child categories recursively (excluding those that would create circular references)
+        const children = this.data.categories.filter(cat => {
+            if (cat.parentId !== category.id) return false;
             if (cat.id === excludeCategoryId) return false;
             if (this.isDescendant(excludeCategoryId, cat.id)) return false;
             return true;
         });
-
-        availableCategories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category.id;
-            option.textContent = category.name;
-            select.appendChild(option);
+        
+        children.forEach(child => {
+            this.addEditParentOption(select, child, level + 1, excludeCategoryId);
         });
     }
 
